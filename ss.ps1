@@ -41,7 +41,6 @@ function Upload-ToImgbb {
     }
 }
 
-# Function to send the Discord message with an image URL
 function Send-DiscordMessage {
     param (
         [string]$WebhookUrl,
